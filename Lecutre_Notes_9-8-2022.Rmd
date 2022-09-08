@@ -1,0 +1,93 @@
+---
+title: "Lecture Notes 9/8/2022"
+author: "Grace Rade"
+date: "2022-09-08"
+output: html_document
+---
+## Lecture 02
+
+### 1.1 Terminal Window
+
+Terminal window: engine of your computer behind the scenes!
+
+  - Type commants, not point and click
+  
+### 2.1 Reading Summary
+
+Ch. 1 Intro: 
+  
+  - CRAN = App Store/Google Play for R packages
+ 
+ 
+Ch. 1.1 devtools package 
+
+  - toolbox for making R packages
+
+  
+Ch. 1.2 
+  
+  Book Overview
+
+### 2.2 Minimally Vibale Product/Ch. 2
+
+Ch. 2.1 MVP
+
+
+Ch. 2.2 Take out toolbox
+
+
+Ch. 2.3 What will package do?
+
+
+Ch. 2.4 Sneak peak of final product (source code necessary to build package)
+
+
+Ch. 2.5 create_package() function (parenthesis indicates function)
+  
+  - builds package skeleton
+  
+  - file paths specify locations of files on your computer
+  
+    - `create_packages("")` then tabs to set the filepath
+    
+  - this function should pop up a **new** RStudio Project window (work here)
+
+
+Ch. 2.6 Skip
+
+
+Ch. 2.7 Create a function for text manipulation
+
+
+Ch. 2.8 Where do I save this function?
+
+
+Ch. 2.9 Test function
+
+  - Ch. 2.9.1 Skip
+
+Ch. 2.10 check() that your package is valid
+
+  - check early, check often
+  
+Ch. 2.11 DESCRIPTION file
+
+  - like a package's drivers license
+  
+  - all of the basic info on the package, required of all packages
+  
+Ch. 2.12 Sharing conditions
+  
+  - LISENCE file
+
+Ch. 2.13 make help files
+
+  - `document()`
+  
+  - makes the package user friendly
+  
+Ch. 2.14 check early, check often
+
+Ch. 2.15 Install your **local** package (on *your* computer)
+
+  - not from CRAN online

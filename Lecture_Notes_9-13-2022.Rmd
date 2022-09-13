@@ -1,0 +1,176 @@
+---
+title: "Lecture_Notes_9-13-2022"
+author: "Grace Rade"
+date: "2022-09-13"
+output: html_document
+---
+## Lecture 03
+
+### Announcements
+
+* course schedule will be filled in by Thursday
+
+* Names and Values reading quiz due by Friday 9/16 5:00 pm EST
+
+  + Open book, open note
+  
+  + Must be completed individually, not open internet
+  
+### Mini-Lecture 1
+
+**What I Already Know**
+
+* data wrangling and data visualization
+
+* universal programming concepts
+
+  + data types, functions, object oriented programming
+  
+* basic version control
+
+**What I Will Learn**
+
+* how R really works
+
+* how to write robust, user friendly functions
+
+* how to actually collaborate on GitHub
+
+* how to make your code *readable*
+  
+  + YOUR BIGGEST COLLABORATOR IS FUTURE YOU
+
+**Assignments**
+
+* weekly open-book quizzes (15%)
+
+  + open Tuesdays 9:25 am, close Firdays 5:00 pm
+  
+* Labs (0%) note due, but still do them
+
+* Code review (15%)
+
+* Mini-projects (55%)
+
+* Engagement (15%)
+
+### lobstr package
+
+the str stands for "structure of objects"
+
+**Memory Usage**
+
+Two forms of memory:
+  
+  + Hard Drive: big storage, slow to access (think bookshelf)
+  
+  + RAM: lower storage, fast access (think desk)
+
+Units of memory have to do with bytes and kilobytes
+
+**Memory Locations**
+
+Everything on your computer needs to have an address. Access with `ref()`
+
+## Lab 01: Names and Values
+
+```{r}
+library(lobstr)
+ls() ## list the objects in your workspace
+mem_used() ## check how much memory is being used by this R session
+```
+
+A byte is 8 bits. A byte is a very small unit of information, usually used to store a single character. A kilobyte is 1000 bits and a megabyte is 1000 kilobytes. 
+
+```{r}
+library(broom) ## load another backage
+mem_used() ## check the memory being used again to see if it changes after loading a new package
+
+data(iris) ## now try loading a dataset
+mem_used() ## check the memory being used again to see an increase
+
+obj_size(iris) ## use this function to check the size of an individual object; see if the size is equal to the memory increase previously observed
+```
+
+The increase I observed is not equal to the size of the memory usage increase
+
+```{r}
+before <- mem_used() ## store the amount of memory we are currently using at this point
+
+ref(iris) ## note the address of the Iris dataset
+
+my_iris <- iris ## bind a second name to iris
+ref(my_iris) ## check the address again
+```
+
+Binding a second name without making changes to an object does not make a copy, and the object address remains the same. 
+
+```{r}
+my_iris <- my_iris %>%
+  mutate(sepal_area = Sepal.Length * Sepal.Width) ## make a change to the my_iris dataset
+
+ref(my_iris)
+```
+
+Now that we have made changes to the my_iris dataset, the object has been copied and given a new address. This new object was made before the changes were made to the dataset, so the old object is the iris dataset with no changes. 
+
+```{r}
+mem_used() - before ## see how much memory the extra copy of my_iris takes up (this number also includes loading tidyverse)
+```
+
+The difference is not equal to the size of the new column we created becuase the code created a whole new object that is the size of the iris dataset + the size of the new column. 
+
+```{r}
+obj_size(my_iris$sepal_area) ## check the size of the new column we added to my_iris
+
+obj_size(iris) ## check the size of iris
+```
+
+Suppose we change `iris` to its long format. 
+
+```{r}
+iris_long <- iris %>%
+  pivot_longer(-Species, names_to = "type", values_to = "measurement")
+
+obj_size(iris_long) ## check the size of iris_long
+```
+
+iris_long takes up more memory than iris. This is becuase it has more columns than the original iris dataset, and is thus a larger object. 
+
+What about tibbles?
+
+```{r}
+before <- mem_used() ## set before again
+iris_tbl <- iris_long %>%
+  as_tibble() ## turn iris_long into a tibble
+mem_used() - before
+```
+
+Does converting from a data.frame to a tibble force a copy?
+```{r}
+class(iris_tbl) ## check the class of the iris_tbl object
+ref(iris_tbl)
+
+ref(iris_long)
+```
+
+Yes, they have different addresses.
+
+```{r}
+tracemem(iris) ## find the object address of iris, start tracking it
+
+iris %>%
+  pull(Petal.Length) %>%
+  mean() ## some computations do not require making a copy
+
+iris %>%
+  select(contains("Petal")) %>%
+  head()
+
+iris %>%
+  mutate(petal_area = Petal.Length * Petal.Width) %>%
+  as_tibble() ## however if we use mutate() a copy *does* get made
+
+gc() ##reclaim memory no longer being used
+```
+

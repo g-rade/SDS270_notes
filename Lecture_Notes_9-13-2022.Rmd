@@ -106,6 +106,7 @@ ref(my_iris) ## check the address again
 Binding a second name without making changes to an object does not make a copy, and the object address remains the same. 
 
 ```{r}
+library(tidyverse)
 my_iris <- my_iris %>%
   mutate(sepal_area = Sepal.Length * Sepal.Width) ## make a change to the my_iris dataset
 

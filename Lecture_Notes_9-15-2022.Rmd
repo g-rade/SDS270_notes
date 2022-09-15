@@ -1,0 +1,221 @@
+---
+title: "Lecture_Notes_9-15-2022"
+author: "Grace Rade"
+date: "2022-09-15"
+output: html_document
+---
+## Project Phases
+
+Look at the project phases: it's going to be a slow roll-out. All of the instructions and parts of the project are on the 'Projects' tab on the class website. 
+
+## Lec 04
+
+### Lesson Prof. Kim learnt at Google
+
+**When you're stuck, don't thrash.**
+
+Tip: if you're stuck, try to solve for 20 minutes. If you can't, **STOP**. Take a break. 
+
+Working in tech isn't just about knowing the tech, it's about knowing yourself. 
+
+## Vectors
+
+### Garbage Collection
+
+Garbage collection is freeing up RAM/memory that you're not using. Like cleaning your desk. 
+
++ R does garbage collection automatically, you don't control it. The schedule might seem random.
+
++ lazy garbage collection might make `mem_used()` results inconsistent for the same code in different sessions. 
+
+When does R determine that a file is no longer needed to be considered for garbage collection?
+
+### Tibbles vs df (data frame) Memory Use
+
+iris data is 150 rows x 5 columns, but as a tibble there is metadata (data about the data) included, which increases the memory usage. 
+
+Ex. Photo of Prof. Kim at the US Open
+
+  + data = pixel/color data
+  
+  + metadata = type (jpeg or png, etc.), timestamp, geolocation, etc. 
+  
+### Wide vs. Long
+
+Whether data is in long format or wide, can also influence memory. It has to do with factors.
+
+### Vectors
+
+**Vectors are hidden from you when using the tidyverse/dplyr. They abstract away from working with vectors** Python does not. 
+
+* Lists are the basic vector building blocks of R
+
+  + "coercion" means forcing one data type to be another data type
+    
+    - character -> double -> integer -> logical
+  
+  + data frame and tibbles are ultimately lists, which are ultimately vectors
+  
+  + differences: 
+  
+    - tibble() never coerces an input
+
+    - tibble() won't transform non-syntactic names
+
+    - tibble() only recycles vectors of length 1
+
+    - tibble() allows references to created variables
+
+    - [ always returns a tibble
+
+    - $ doesn't do partial matching
+  
+### Object Oriented Programming (OOP)
+
+Think of it as a generic: like the way all cars have drive, stop, park modes/methods. We can create objects in a programming panguages that have a basic set of actions. 
+
+Objects can have actions. 
+
+
+## Lab 02
+
+### Attributes
+
+```{r}
+library(tidyverse)
+attributes(starwars)  ## check the attributes of an object/dataset
+```
+
+We can also assign new attributes to an object. 
+
+```{r}
+attr(starwars, "class") <- "sds_is_awesome"  ## assign a class attribute to the starwars dataset, the class is "sds_is_awesome"
+
+attributes(starwars)  ## check the attributes again 
+```
+
+But what type of object is starwars?
+```{r}
+starwars %>%  
+  select(name)  ## try to select a column to see if starwars is a dataframe
+```
+
+That did not work... lets try to delete the bad copy. 
+
+```{r}
+rm(starwars)  ## delete the bad copy (gets ride of it in the environment)
+starwars
+```
+
+Why does this work? This reverts starwars back to the original tidyverse object and gets rid of our copy. 
+
+### S3 Classes
+
+S3 is the name of the simplest and most common object-oriented paradigm in R.
+
+Note first that starwars has multiple classes, and these classes are ordered.
+
+```{r}
+class(starwars)  # #check the classes of the starwars objecgt
+```
+
+The basic data type of starwars is a list, because all tbl_dfs and data.frames are lists.
+
+```{r}
+typeof(starwars)  ## check the type of the starwars object
+```
+
+
+When you type `starwars` at the console, what actually gets called is `print(starwars)`. That is, the default action when you type the name of an object is to run the `print()` command on that object.
+
+Thus, when you type `starwars`, R runs `print(starwars)`, and since it knows that print() is a **generic function**, and starwars is a `tbl_df`, it looks for a method called `print.tbl_df()`. If it can’t find one, it will look for a method called `print.tbl()`. If it can’t find one, it will look for `print.data.frame()`. If it can’t find that it will look for `print.default()`.
+
+n this case, there are `print()` methods defined for tbl and data.frame
+
+```{r}
+starwars
+print.data.frame(starwars)  ##print the dara frame specifically
+```
+
+But what about `as.data.frame(starwars)`?
+
+```{r}
+as.data.frame(starwars) 
+```
+
+```{r}
+as.numeric(starwars$name)  ## changes the name column type to numeric
+as.numeric(factor(starwars$name)) ## changes the name column type to factors then to numeric
+```
+
+The factor command keeps the meaning of the string names and converts them to numbers... allows it to work. 
+
+```{r}
+x <- factor(starwars$name)  ## make factors
+attributes(x)  ## check the attributes of the name column
+
+as.numeric(x) ## make the factors numeric
+
+as.numeric(starwars$name) ## make the column numeric without making facotrs first, does not work becuase there is a coercion order
+```
+
+### List Columns
+
+Since `data.frames` are lists, their columns can be objects of arbitrary type. In particular, they can be lists.
+
+The `films` column in `starwars` is a list-column. Each entry contains a list of the movies that the corresponding character has appeared in.
+
+```{r}
+films <- starwars %>% 
+  pull(films)  ## isolates the list-column into a new object (?)
+films
+
+```
+
+Note that the `length()` of `films` is 87, but that each entry in `films` contains a list of arbitrary length. To see these lengths, we have to `map()` over the entries in films.
+
+```{r}
+length(films) ## check the length of the list
+
+map_int(films, length) ## check the length of each entry
+```
+
+List-columns can be expanded by `unnest()`. This has the effect of lengthening the data frame (sort of like an accordian). Each row is duplicated for each unique value of each entry in the list-column.
+
+Note that each row in `starwars` corresponds to one character, while `films` stores the list of films that character has appeared in. If we `unnest()` the data frame by expanding out the films, we get a data frame that is much longer, because each row now represents one character in one film.
+
+```{r}
+library(tidyr)
+starwars %>%
+  unnest(films)  ## expand the list
+```
+
+Note that `films` is no longer a list-column – it’s now a character vector.
+
+The `nest()` function performs the opposite operation of “rolling up” the data frame to create a new list-column.
+
+Suppose now we want to add the numbers of films for each character to the `starwars` data set. A simple `mutate()` like this will not throw an error, but also won’t do what we want.
+
+```{r}
+oops <- starwars %>%
+  mutate(num_films = length(films)) %>%
+  arrange(desc(num_films)) %>%
+  select(name, num_films)
+oops
+```
+
+This just made all of the entries equal to `length(films)`.
+
+```{r}
+all(oops$num_films == length(starwars$films)) ## check the length of the entries
+```
+
+To get this right, we need to `map()` inside our `mutate()`.
+
+```{r}
+starwars %>%
+  mutate(num_films_actual = map_int(films, length)) %>%
+  arrange(desc(num_films_actual)) %>%
+  select(name, num_films_actual, films)
+```
+

@@ -1,0 +1,98 @@
+---
+title: "Lecture_Notes_9-20-2022"
+author: "Grace Rade"
+date: "2022-09-20"
+output: html_document
+---
+## Lec 05
+
+### Questions and Answers
+
+**Difference between `print.data.frame()` and `as.data.frame()`**
+
+```{r}
+library(dplyr)
+class(starwars)
+```
+
+Objects in R can belong to multiple *ordered* classes. 
+
+  + class (OOP) = a blueprint for an object (ex. car, house, airplane)
+  
+`print()` by itself is an S3 generic function. Generic functions have **methods** that operate on specific classes. 
+
+Each class has a specific way to "open the door"/perform a task. 
+
+`open_door()` would be a generic function; it can take inputs car, house, airplane, and generically work. 
+
+`print()` is equivalent to `open_door()` generic, `print.data.frame()` is equivalent to `open_door.car()` specific for cars. 
+
+```{r}
+## Slide 5
+starwars %>%
+  as.data.frame() %>%  ## coerce starwars into a data frame
+  print()  ## print starwars
+```
+
+  + explicit coercion to `data.frame`
+  
+  + calls generic function
+  
+```{r}
+## Slide 6
+starwars %>%
+  print.data.frame()
+```
+
+  + explicit call to S3 method
+  
+  + override S3 generic function method dispatch
+  
+**Slide 5 vs. Slide 6**
+
+Even though the output in the console is the same, behind the scenes, one is making a copy of the object and the other isn't. 
+
+
+Slide 5 is making a copy (inefficient memory wise) and Slide 6 doesn't make a copy (efficient memory wise). 
+
+### Deleting a dataset
+
+`rm()` does not delete the starwars data set altogether, just removes it from your working environment. Can't delete it from the package. 
+
+### GitHub
+
+**Basic Workflow**
+
+  + commit = changes to code
+  
+    - amount of change before commit depends; should be minimal and complete
+    
+  + Types of errors:
+    
+    - Can't push becuase don't have permission (have the admin add you)
+    
+    - Can't push becuase repo is ahead (pull, then push)
+    
+    - Can't pull becuase of uncommitted changes (commit, then pull, then push)
+    
+    - Merge conflict (cry, resolve conflicts, then commit, then push)
+    
+**Personal Access Tokens (PAT)**
+
+A PAT is like a password on steroids. Give you more power and control, but require more management.
+
+## Lab 3
+
+```{r}
+library(usethis)
+git_sitrep()  ## verify your connection to GitHub
+```
+
+```{r}
+gh_token_help() ## investigate errors in your tokes
+```
+
+```{r}
+usethis::create_from_github("sds270-s22/git-demo", fork = TRUE) ## setting up the local repo
+```
+

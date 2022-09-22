@@ -1,0 +1,245 @@
+---
+title: "Lecture_Notes_9-22-2022"
+author: "Grace Rade"
+date: "2022-09-22"
+output: html_document
+---
+## Lec 06
+
+### Theory Behind Lec 05 GitHub Lab
+
+Why are we doing this? GitHub = Google Drive on steroids!
+
+There are **MANY** ways to use git. 
+
+  + terminal/command line interface (CLI)
+  
+    * hacker mode
+    
+  +  using github.com GUI (graphical user interface)
+  
+    * going to github.com and interacting directly with the website
+    
+  + GitHub desktop app (not going to be used in this class)
+  
+  + RStudio git panel
+  
+    * commit, pull, push
+    
+  + `usethis` R package functions  (Prof. Kim's opinion: some functions are useful and some are not)
+  
+    * ex. creating PAT
+    
+
+By yourself: basic commit, pull, and push is enough. 
+
+CollaboratingL editing many files, often with overlapping edits
+
+Use *branches*:
+
+  + Default branch: main/master
+    
+    - the working, pristine, live working version of a repo
+    
+  + Other branches: say you want to to add a new feature, but are worried it will break the code
+  
+    - you can isolate and test changes in a separate branch, keeping main clean
+    
+Q: How do we *merge* test-feature into main?
+  
+A: via a pull request (PR into main)
+
+You can visualize branches on github.com  (insights tab, network)
+
+Q: What if O and X commit changes that conflict? (merge conflict)
+
+  ex. two people edit the same line of code
+  
+A: By resoling the "merge conflict"
+
+
+**Handling Merge Conflicts**
+
+  + keep repo up to date
+    
+    - pull early, pull often
+  
+  + avoid them to begin with via communication
+  
+  + periodically update branches with contents of main
+  
+    - i.e. "fetch upstream" 
+  
+  + resolve merge conflicts
+  
+Q: What is a *fork* of a repo?
+
+A: Make your own copy of a repo
+
+  + it's your own branch of the original
+  
+Q: Why would you fork when you can just create a branch?
+
+A: Ex. say there is a repo callet team_justice/project
+
+  + internal users: etiene, jaewon, ximena
+    
+    - the people who can create internal branches
+    
+    - direct write permission to the repo from the owner
+    
+  + external user: ravi
+    
+    - not part of the internal users group but wants to make their own branch
+    
+    - fork their own branch called ravi/project
+    
+
+## Lab 04
+
+The three main subset operators are [, [[ and $. In addition, you will see functions that perform subsetting operations like:
+
+  + `dplyr::filter()`: the tidyverse way to select a subset of the rows of a data frame.
+
+  + `dplyr::select()`: the tidyverse way to select a subset of the columns of a data frame.
+
+  + `dplyr::pull()`: a tidyverse function analogous to [[.data.frame.
+
+  + `purrr::pluck()`: a tidyverse function analogous to [[.
+
+It’s probably best to avoid these other similar functions:
+
+  + `subset()`: the base R way to select a subset of the rows of a data frame.
+  + `rvest::pluck()`: similar to purrr::pluck() but not as good
+  + `magrittr::extract()`: a wrapper to [
+  + `magrittr::extract2()`: a wrapper to [[
+
+Key idea: there are six different ways to index a vector (or list).
+
+The three main most commonly used ways are:
+
+  + with a numeric vector that selects the elements by index
+  + with a logical vector that selects the elements that are `TRUE`
+  + with a character vector that selects the elements by name
+
+Note that indexing by logical vector will generally return an object of the same length as the original (or smaller), whereas indexing by numeric vector can return an object of any length.
+
+Using `dplyr`, we would normally find the blue-eyed characters using `filter()`.
+
+```{r}
+library(tidyverse)
+
+starwars %>%
+  filter(eye_color == "blue")  ## filter the starwars dataset for characters with blue eyes
+```
+
+
+Instead, we’ll use the base R functionality for subsetting vectors. First, we compute a logical vector that indicates whether each character has blue eyes.
+
+```{r}
+lgl <- starwars$eye_color == "blue"  ## compute a logical vector that indicates whether each character has blue eyes
+lgl
+```
+
+```{r}
+starwars[lgl, ] ## compute a subset of characters that have blue eyes, blank keeps other columns
+```
+
+Alternatively, we could use the `which()` function to return an integer vector of the corresponding indices.
+
+```{r}
+num <- which(starwars$eye_color == "blue")  ##find the indices of blue-eyed characters
+num
+```
+
+```{r}
+starwars[num, ]  ##create a subset of characters with blue eyes based on their row indices
+```
+
+```{r}
+length(lgl)  ## compute the length of lgl
+length(num)  ## compute the length of num
+```
+
+The lengths of `lgl` and `num` are not the same. This is because `num` only includes the indices of the blue-eyed characters, while `lgl` includes all characters in the dataset and the TRUE/FALSE determination of blue eyes, not just the characters (row indices) that have blue eyes. 
+
+In addition to subsetting, you can also use index vectors to resample, or even oversample, a vector.
+
+For example, we could double the previous results by repeating the index vector.
+
+```{r}
+# note error!
+starwars[c(lgl, lgl), ] ##repeating the index vector
+
+# works, but not necessarily as intended -- output suppressed
+as.data.frame(starwars)[c(lgl, lgl), ]
+
+# no warning
+starwars[c(num, num), ]
+```
+
+
+Remember that a data frame is just a list of vectors (of the same length)! Thus, the subsetting rules governing lists also apply to data frames.
+
+What is the type of the result of starwars["name"]?
+
+```{r}
+starwars["name"] ## subsetting the names
+
+class(starwars["name"])  ##checking the class/type
+```
+
+The result is a single column of character names of type tibble data frame. 
+
+```{r}
+starwars[["name"]] ## subsetting a single element of name
+
+class(starwars[["name"]]) ## checking the class/type
+```
+
+```{r}
+starwars$name  ##subsetting the row name
+
+class(starwars$name) ##checking the class/type
+```
+
+
+Storing the names of variables in vectors can be counter-intuitive. Note that [ will work, $ will not, and [[ will work only with vectors of length 1.
+
+```{r}
+vars <- c("name", "height")  ##making a list vector of length 2
+
+# works
+starwars[, vars]  ##subsets multiple objects of the dataset
+
+# doesn't work
+starwars[[vars]]  ##trying to subset a single object but a multiple object length vector, size incompatible
+
+# doesn't work
+starwars$vars  ##not a column in the dataset
+```
+
+The behavior is also different when the vector of names is of length one.
+
+```{r}
+my_var <- c("name")
+
+# works
+starwars[, my_var]
+
+# works!
+starwars[[my_var]]
+
+# doesn't work
+starwars$my_var  ##my_var is not a column in the dataset, even though name is
+```
+
+These inconsistencies are some of the many reasons to use the selection operators in `select()` instead.
+
+```{r}
+?tidyselect::select_helpers  ##look at selection language help file
+```
+
+Why does `starwars[[vars]]` throw an error, but `starwars[[my_var]]` works? What is the logical inconsistency in the first case?
+
+Incompatible length in `starwars[[vars]]`, it's too long. [[ ]] is mean for subsetting a single object, not multiple. 

@@ -1,0 +1,205 @@
+---
+title: "Lecture_Notes_9-27-2022"
+author: "Grace Rade"
+date: "2022-09-27"
+output: html_document
+---
+## Lec 06
+
+### Subsetting
+
+**Operators to Use**
+
+  - `dplyr::filter()`
+ 
+  - `dplyr::select()`
+ 
+  - `dplyr::pull()`
+ 
+  - `purrr::pluck()`
+ 
+**Operators to Avoid**
+
+  - `subset()`
+ 
+  - `rvest::pluck()`
+ 
+  - `magrittr::extract()`
+  
+  - `magrittr::extract2()`
+
+Remember the train metaphor from the textbook. 
+
+`x` is a train with three cars 
+
+`x[1:2]` subsets the first two car of the train
+
+`x[-2]` subsets the train without the second car
+
+`x[c(1,1)]` subsets a train with the first car twice
+
+`x[0]` subsets the train with no cars
+
+## Lab 05
+
+```{r}
+library(sloop)   ## sloop packages gives information about the S3 system
+library(tidyverse)
+```
+
+`tidyverse` packages has lots of S3 methods available to us. 
+
+```{r}
+s3_methods_generic("print")  ## look at all of the print methods for S3 objects
+
+s3_methods_generic("print") %>%
+  filter(str_detect(class, "tbl|data.frame"))  ## there are so many we might at well filter to only look at the ones for tibbles and data frames
+```
+
+
+Other common S3 generics include `summary()` and `plot()`. 
+
+```{r}
+s3_methods_generic("summary")
+
+s3_methods_generic("plot")
+```
+
+Think of a generic that you have used in the past. Use `s3_methods_generic()` to find its available methods. 
+
+```{r}
+s3_methods_generic("str")  ## check all the methods for the str() generic
+```
+
+We can also find all the methods for a particular class. 
+
+```{r}
+s3_methods_class("tbl_df")
+```
+
+Note that while the methods for a particular **generic** are most likely written by many different developers in many different packages, the methods for a particular **class** are most likely written by the same set of developers of a single package.
+
+If you are ever unsure of which method is actually being run when you invoke a generic, use `s3_dispatch()` to figure out what is going on.
+
+```{r}
+s3_dispatch(print(starwars))  ## see which method is actually being run on an object
+
+s3_dispatch(print(mtcars))
+```
+
+These two examples show different outputs because `starwars` is a tibble data frame, while `mtcars` is just a data frame. They are different classes. 
+
+`print.data.frame` does not get called on `starwars` because it is a tibble. 
+
+The `emoji` package allows you print emojis via the `emoji()` function. 
+
+```{r}
+library(emoji)
+emoji("star")   ## print the star emoji
+emoji("dog")
+emoji("basketball")
+```
+
+```{r}
+emojis %>% View() ## see the full list of emojis you can print
+```
+
+The `crayon` package allows you to print in color in the console. 
+
+```{r}
+tidyverse_logo() ## consider the tidyverse logo
+
+cat(crayon::blue("Ben"))
+```
+
+Let's define a method method that will only be invoked for objects of class `beanumber`, which is Prof. Baumer's GitHub username. This method will simply print a colorful message to the console, and then invoke the `NextMethod()` available.
+
+```{r}
+print.beanumber <- function(x, ...) {
+  cat(
+    crayon::magenta(
+      "Grace", 
+      emoji::emoji("heart"), 
+      "s programming in R!\n"
+    )
+  )
+  NextMethod()
+}
+```
+
+To use it, we just have to create an object of type `beanumber`, and then call `print()`. Remember that in R you can simply modify the class attribute of any object!
+
+```{r}
+class(starwars) <- c("beanumber", class(starwars))  ##make starwars class beanumber
+starwars
+```
+
+Note that this method works on objects of any underlying class!!
+
+```{r}
+class(Titanic)
+
+class(Titanic) <- c("beanumber", class(Titanic))
+Titanic
+```
+
+
+Define your own print method with your GitHub username. 
+
+```{r}
+print.grade <- function(x, ...) {
+  cat(
+    crayon::green(
+      "Grace", 
+      emoji::emoji("evergreen tree"), 
+      "like trees! \n"
+
+    )
+  )
+  NextMethod()
+}  ## define the function
+
+class(starwars) <- c("grade", class(starwars))
+starwars
+```
+
+In the previous section, we defined a method for an existing generic function. Now, we will define a new generic function.
+
+```{r}
+print_emoji <- function(x, ...) {
+  UseMethod("print_emoji")
+}
+```
+
+Since we haven’t defined any methods yet, the function won’t actually work!
+
+```{r}
+print_emoji(starwars)
+```
+
+However, we can start by writing a `default` method that will simply call the existing `print()` generic.
+
+```{r}
+print_emoji.default <- function(x, ...) {
+  print(x, ...)
+}  ## now print_emoji() will work
+
+print_emoji(starwars)
+```
+
+In the default method for `print_emoji()`, can we use `NextMethod()` instead of `print()`? Why or why not?
+
+I don't think so becuase we didn't define any other methods besides the generic. If there were specific methods for different classes we could I think.
+
+```{r}
+print_emoji.data.frame <- function(x, ...) {
+    cat(
+      emoji::emoji("evergreen tree")
+    )
+    print(x, ...)
+    
+}  ## define print_emoji.data.frame()
+
+print_emoji.data.frame(mtcars)  
+```
+

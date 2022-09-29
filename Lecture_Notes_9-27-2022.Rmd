@@ -89,7 +89,7 @@ s3_dispatch(print(mtcars))
 
 These two examples show different outputs because `starwars` is a tibble data frame, while `mtcars` is just a data frame. They are different classes. 
 
-`print.data.frame` does not get called on `starwars` because it is a tibble. 
+`print.data.frame` does not get called on `starwars` because it is a tibble first, then a data frame. The class hierarchy calls most specific first, then least specific in the order. 
 
 The `emoji` package allows you print emojis via the `emoji()` function. 
 

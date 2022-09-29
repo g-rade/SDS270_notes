@@ -1,0 +1,146 @@
+---
+title: "Lecture_Notes_9-29-2022"
+author: "Grace Rade"
+date: "2022-09-29"
+output: html_document
+---
+
+## Lec 08
+
+### S3 OOP
+
+**Slack Review**
+
+Sometimes subtle differences in behavior between data.frame and tibble objects (recycling rules)
+
+**S3 Object Oriented Programming**
+
+Q: What is the point of OOP? 
+
+A: You want to write reusable code blocks
+
+  + Philosophy DRY: Don't Repeat Yourself (i.e. don't write redundant code, write it only once)
+  
+  + Easier to maintain, easier to change
+  
+
+Ex. Cars
+
+  + types of cars: hatchback, pickup truck, SUV
+  
+    - hatchbacks: VW Golf GTI, Honda Civic
+    
+    - pickup trucks: Ford F150, Toyota Tacoma
+    
+    - SUVs: Cadillac Escalade, Subaru Outback
+  
+  + think of a nested structure (a tree)
+  
+  + DRY in practice for blueprints: 
+  
+    - Don't make six blueprints independent of each other
+    
+    - Instead:
+      
+      1. write a blueprint for features that all cars share
+      
+          a. Wheels, engine, doors
+        
+      2. Write "nested" blueprints that are specific to each type of car but inherit the features that all cars have
+      
+          a. hatchbacks (trunks that open vertically)
+          
+          b. picup truck (cargo bed)
+          
+          c. SUV (very large)
+      
+      3. Write more specific blueprints maintining nested structure
+      
+          a. VW Golf GTI
+          
+          ...
+          
+          f. Subaru Outback
+          
+  + Now, say the govt. steps in and has new safety standards for engines
+  
+    - Using OOP, only **one** blueprint needs to be updates
+  
+  
+**Methods**
+
+  + Methods are functions on classes
+  
+```{r}
+library(sloop)
+sloop::is_s3_generic("summary")  ## ask if summary() is a generic function
+
+args("summary")  #displays the arguments names and default values for a function
+```
+ 
+
+**Create an lm (linear model) object in R**
+
+Fit an lm linear model. This is an object of class lm.
+
+```{r}
+mod <- lm(mpg ~ disp, data = mtcars)  ##create the lm object
+class(mod)  ## check class
+
+summary(mod) ##summary() generic, which calls summary.lm() automatically
+```
+
+  
+**Overwriting an existing method for a class**
+
+Note the nested nature of class. 
+
+```{r}
+summary.my_lm <- function(object, ...) {
+  message("Look at my amazing regression results!")
+  object$coefficients
+}  ##create a new method to only output the regression coefficients
+```
+
+Let's make a class hierarchy for mod: first `my_lm`, then original class `lm`
+
+```{r}
+class(mod) <- c("my_lm", "lm")
+class(mod)
+```
+
+```{r}
+summary(mod)
+```
+
+Change this new function to first output the message, but also inherit the `lm` class. 
+
+```{r}
+summary.my_lm <- function(object, ...) {
+  message("Look at my amazing regression results!")
+  NextMethod()
+}  ##change the method, NectMethod() inherits lm class
+
+summary(mod)
+```
+
+
+**Defining a new generic method**
+
+```{r}
+rmse <- function(x, ...) {
+  UseMethod("rmse")
+}  ##define the new generic method
+
+rmse.lm <- function(x, ...) {
+  sqrt(mean(x$residuals^2))
+}   ## now define the new class method
+
+rmse(mod)
+
+rmse.glm <- function(x, ...) {
+  (mean(x$residuals))
+}  ##define the method for glm object
+
+```
+

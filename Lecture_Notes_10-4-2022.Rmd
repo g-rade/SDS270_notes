@@ -1,0 +1,247 @@
+---
+title: "Lecture_Notes_10-4-2022"
+author: "Grace Rade"
+date: "2022-10-04"
+output: html_document
+---
+## Lec 09
+
+### Announcements
+
+**Project Phase 1**
+
+  + complete 2 reading quizzed w/ at least 80% accuracy
+  
+  + write a function and submit it to code review (per person)
+  
+  + write a one sentence idea for an R package 
+  
+  + write a short statement that describes your Git/GitHub and programming development during Phase I
+  
+
+### Reproducible Examples
+
+Reproducible examples: show me your error, don't tell me your error
+
+```{r}
+## Example code
+
+library(ggplot2)
+library(dplyr)
+library(lobstr)
+
+## How do I compute the average price?
+
+diamonds %>% 
+  summarize(ave_price = avg(price))
+
+## the function for averages is mean() not avg()
+```
+
+How do I get help with this error? The `reprex` package!
+
+```{r}
+library(reprex)
+
+## copy your code that has the error to the clipboard, then run the reprex() function
+
+reprex()
+
+## this isn't a true reprex, becuase we didn't load the packages in the code, so it produced a different error
+
+reprex()
+```
+
+The `reprex` package simulates restarting R and only running the code that is copied to the clipboard. You can also copy and paste the reprex to slack!
+
+Your reprex code should be minimal; get rid of that unnecessary code. They also need to be viable, so they reproduce the same error. (this is good programming etiquette)
+
+### Merge Conflicts
+
+This occurs when there are unsynced changes of the same line of code. 
+
+## Lab 06
+
+### Control Flow
+
+The `if () ... else` syntax is for control flow. However, `ifelse()` is a function that returns a vector of the same length as the vector you put in, based on some logical conditions. These are often useful inside `mutate()`.
+
+In the `starwars` data set, most characters have a `species`. However, there are many different species.
+
+```{r}
+library(dplyr)
+
+starwars %>%
+  group_by(species) %>%
+  count() %>%
+  arrange(desc(n))
+```
+
+Suppose that we wanted to lump all of the non-human and non-droid species together. We can use `ifelse()` to create a new variable.
+
+```{r}
+sw2 <- starwars %>%
+  mutate(species_update = ifelse(!species %in% c("Human", "Droid"), "Other", species)) %>%
+  select(name, species, species_update)  ## create a new species_update variable (if species is not Human or Driod, then species_update == other, else species_update == species)
+```
+
+Note the behavior around `NA`. Some characters have unknown species.
+
+```{r}
+starwars %>%
+  filter(is.na(species))
+```
+
+
+Our previous construction led to everyone non-human or non-droid being classified as `Other`, when maybe some should be left as `NA`.
+
+```{r}
+sw2 %>%
+  group_by(species_update) %>%
+  count() %>%
+  arrange(desc(n))
+
+## count the number of NA 
+```
+
+By capturing `NA`s in our condition, we can leave them as `NA`s.
+
+```{r}
+starwars %>%
+  mutate(species_update = ifelse(!species %in% c("Human", "Droid", NA),"Other", species)) %>%
+  filter(is.na(species)) %>%
+  select(name, species, species_update)
+```
+
+Let's create a new variable called `is_bald` and set it to `FALSE` if the character has hair of any color, `TRUE` if the character has no hair, and `NA` if the character is a droid.
+
+```{r}
+starwars <- starwars %>% 
+  mutate(is_bald = ifelse(species == "Droid", NA, TRUE)) %>% 
+  mutate(is_bald = ifelse(is_bald & hair_color != "none", FALSE, is_bald))  ## create the variable
+
+starwars %>%
+  select(hair_color, is_bald) %>%
+  table(useNA = "always")
+## check your answer
+```
+
+
+### For Loops
+
+As noted in the book, there are many reasons to avoid writing loops in R. I have never written a `repeat` loop. There are only rare occasions when a `while` loop is necessary. Unless you need to explicitly access indices, you can and should rewrite a `for` loop as a `map()` statement. I will strongly encourage you to do this!!
+
+**Vectorized Operations**
+Many operations in R are vectorized already, so you often don’t need a loop at all.
+
+Considering generating the first 10 number in some integer sequences. For the perfect squares, you don’t need a loop at all, because the square operator is vectorized. **Recall that vectors are built into the fundamental design of R, so things are supposed to work this way!**
+
+```{r}
+library(purrr)
+x <- 1:10  ## list of the first 10 integers
+
+x^2  ##square each item in the list
+```
+
+However, consider generating the Fibbonaci sequence. This can’t be vectorized, because each entry depends on the previous two entries. You could write a for loop.
+
+```{r}
+fib <- c(1, 1)
+for (i in 3:length(x)) {
+  fib[i] <- fib[i-1] + fib[i-2]
+}
+fib
+```
+
+
+**If** we had the Fibbonacci sequence already, we could use R’s vector-based operation lag() to decompose the sequence.
+
+```{r}
+fib_df <- tibble(
+  fib, 
+  prev_x = lag(fib), 
+  prev_prev_x = lag(fib, 2)
+)
+fib_df
+```
+
+But this won’t help us **generate** new values in the sequence.
+
+**Using** `map()`
+
+Instead, we can write a recursive function to generate the *n*th value in the sequence, and then `map()`over that function.
+
+```{r}
+fibonacci <- function(x) {
+  if (x == 1 | x == 2) {
+    return(1L);
+  } else {
+    return(fibonacci(x - 1) + fibonacci(x - 2));
+  }
+}
+map_int(x, fibonacci)
+```
+
+**Choosing a Paradigm**
+
+Generally, when you have a vector x as input, and you want to produce a vector y of the same length as output, you can use one of two paradigms:
+
+  + If the operation can be vectorized, write a function that will take the whole input vector x and compute the whole y vector at once. I suspect that this will be the most efficient method in nearly every case.
+
+  + If the operation can’t be vectorized, write a function that will compute a single value of y for a single value of x, and then map() that function over x.
+  
+Only if neither of these is possible, should you write a for loop.
+
+Recall that we saw `map()` previously in the context of list-columns.
+
+Use the vectorized `nchar()` function to compute the number of characters in each character’s name, without writing any kind of loop.
+
+```{r}
+nchar(starwars$name)
+```
+
+Now try with `map_int()`. 
+
+```{r}
+map_int(starwars$name, nchar)
+```
+
+Now use `map_int()` and `length()` to compute a numeric vector of the number of vehicles associated with each character.
+
+```{r}
+map_int(starwars$vehicles, length)
+```
+
+Use `map()` and `nchar()` to compute the total number of characters in the number of starships associated with each character. For example, Luke Skywalker primarily flew an X-wing fighter, but also briefly piloted an Imperial shuttle in Return of the Jedi. So the number of characters in his starships list is 6 + 16 = 22.
+
+```{r}
+map_int(starwars$starships, ~sum(nchar(.x)))
+
+## another solution
+
+starwars %>%
+  pull(starships) %>%
+  map(nchar) %>%
+  map_int(sum)
+```
+
+Rewrite the following `for` loop as a call to `map()`. The output should be a `list` of length 2.
+
+```{r}
+library(tidyverse)
+mpg_by_year <- group_split(mpg, year)
+
+mods <- list()
+
+for (i in seq_along(mpg_by_year)) {
+  mods[[i]] <- lm(hwy ~ displ + cyl, data = mpg_by_year[[i]])
+}
+```
+
+```{r}
+map(mpg_by_year, ~lm(hwy ~ displ + cyl, data = .x))
+
+## another solution
+
+map(mpg_by_year, lm, formula = "hwy ~ displ + cyl")
+```

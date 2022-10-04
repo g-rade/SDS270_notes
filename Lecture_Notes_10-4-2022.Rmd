@@ -58,7 +58,18 @@ Your reprex code should be minimal; get rid of that unnecessary code. They also 
 
 ### Merge Conflicts
 
-This occurs when there are unsynced changes of the same line of code. 
+This occurs when there are unsynced changes of the same line of code.
+
+### Control Flow Slides
+
+**Slack Review**
+
+  + CRAN only cares if your package is compliant
+  
+  + Test files: if you are getting an error about not having a test file, you have a `testthat` infrastructure but no actual tests
+  
+    - use `usethis::use_test("something")` to create one OR ignore the error for now
+
 
 ## Lab 06
 

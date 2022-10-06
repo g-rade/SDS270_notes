@@ -1,0 +1,21 @@
+---
+title: "Lecture_Notes_10-6/2022"
+author: "Grace Rade"
+date: "2022-10-06"
+output: html_document
+---
+## Lec 10 (Lec 02 part 2, rpackages strikes back)
+
+### Lab 07
+
+```{r}
+library(devtools)
+```
+
+Create a new packages called testing. 
+
+```{r}
+##create_tidy_package("~/Desktop/testing") 
+```
+
+The rest of the lab will be in the testng R Project

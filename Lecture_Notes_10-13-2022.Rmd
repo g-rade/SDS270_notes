@@ -1,0 +1,175 @@
+---
+title: "Lecture_Notes_10-13-2022"
+author: "Grace Rade"
+date: "2022-10-13"
+output: html_document
+---
+## Lec 11
+
+### R Package Lab Wrap Up
+
+**Exercise 13** Using functions in other packages in your functions 
+
+  + ex. ggplot2
+  
+To do this you need to add roxygen2 code:
+  
+  + @import PKGNAME
+  
+  + @importFrom PKGNAME FUNCTIONNAME
+  
+    - ex. @importFrom dplyr filter
+    
+But also add the package to DESCRIPTION file under imports
+
+### Functions
+
+Not all functions in an R package can be seen by users. These are called non-exported functions. *Only those with roxygen2 export code can be seen and used.* (add the @export line in the roxygen2 code). 
+
+**Name Masking ans Scope/Scoping**
+
+When you have functions within functions, what gets hidden? 
+
+  + What is the scope of the function? How much can people see it?
+  
+```{r}
+library(tidyverse) ## running this command will show what commands are masked 
+```
+
+  + This is important when you have functions of the same name. In `tidyverse` the `dplyr` functions `filter` and `lag` mask those of the same name in the `stats` package. 
+  
+    - When you start R, the `stats` package gets loaded by default. In the `stats` package are `filter` and `lag` functions.
+    
+    - When you load `tidyverse`, it **masks** the `stats` package version of these two functions with the `dplyr` version. (shown in the conflicts section of the `library(tidyverse)` console message)
+    
+      * The `dplyr` versions become the default. In some cases the override arguments are programmed into the packages, whereas other times the default is established by the order in which you load the packages. 
+      
+    - Result: `filter()` now calls `dplyr::filter()` (the double colons unambiguously call a specific function from a specific package)
+    
+      * If I want to use the `stats` package version, you need to now call `stats::filter()`. 
+      
+  **Always safer to be explicit**
+
+## Lab 08
+
+The first question you may have is what arguments a function takes. 
+
+```{r}
+args(dplyr::filter)  ##returns the argumets that a function takes
+
+args(print)
+
+args(print.data.frame)
+```
+
+Note that for S3 generic function like `print()`, you can also find the arguments for specific methods.
+
+```{r}
+args(tidyr::gather)  ##find the arguments for tidyr::gather
+
+args(rio::export)
+```
+
+The `body()` function returns the actual code that runs inside a function. There are a several reasons why you might want to see this:
+
+  + It’s the only way to actually see what a function is doing
+
+  + Reading other people’s code is a great way to improve your own ability to write code
+
+  + If the documentation doesn’t answer your question, perhaps the code will
+
+  + Inspecting the code inside a function will help you to think more like a developer, as opposed to a user.
+  
+```{r}
+body(tibble)  ##find the code that runs inside the tibble function
+
+body(tibble:::tibble_quos)
+```
+
+Note that a function may call unexported functions (e.g., `tibble_quos()`) that you won’t recognize. Since the function is not exported, you have to use the triple colon operator to view its source.
+
+```{r}
+body(print)  ##the body of S3 generic functions is rather short
+
+body(print.data.frame)  ##but the body of specific methods is longer
+
+body(print.default)
+```
+
+```{r}
+body(summary.lm)  ##inspect the body for the summary method of an lm object
+```
+
+It is also important to know in what environment a function is created. The `environment()` function tells us.
+
+```{r}
+environment(print)
+
+environment(filter)
+```
+
+R uses lexical scoping. This means that when R looks for the value of names, it depends on the state of things when the function is defined.
+
+R looks for variables inside a function definition first (local variables), but if it can’t find them, it looks in the parent environment. In this case, when `my_fun()` is executed, R looks for the value of `global_var`. Many programming languages will throw an error in this situation, because `global_var` is not defined in the environment created by `my_fun()`. However, R just keeps looking for `global_var` in the parent environment (which in this case is the global environment).
+
+```{r}
+global_var <- 21
+
+my_fun <- function(x) {
+  x + global_var
+}
+
+my_fun(3)
+
+environment(my_fun)
+```
+
+Note also that if we try to re-define `global_var` inside the function definition, we are masking the *name* `global_var`.
+
+```{r}
+my_fun2 <- function(x) {
+  global_var <- 99
+  x + global_var
+}
+
+my_fun2(3)
+```
+
+Note the difference reported by `findGlobals()`.
+
+```{r}
+codetools::findGlobals(my_fun)
+
+codetools::findGlobals(my_fun2)
+```
+
+Local variables that are created inside a function never see the light of day in the parent environment.
+
+```{r}
+my_fun3 <- function(x) {
+  local_var <- 7
+  x + global_var  ##global_var is still 21
+}
+
+my_fun3(3)
+
+local_var  ##local_var hasn't actually been added to the global environment
+```
+
+Allowing local variables to persist outside of the function is a bad idea because it would make things more confusing in the global environment and mess up the intended masking. 
+
+Because of name masking, values of objects in the parent environment can affect the behavior of a function. This behavior is often useful in data analysis scripts, but can be problematic in more formal programming.
+
+This means that if we reset the value of `global_var`, we change the behavior of `my_fun()`. 
+
+```{r}
+global_var <- 15
+
+my_fun(3)
+```
+
+Dynamic lookup can be helpful in situations where one wants to see if changes made to a variable have been made in the global environment. 
+
+Dynamic lookup can be unhelpful when a global variable gets overwritten accidentally and thus changes the output of the function. 
+
+A function that depends only on its inputs is called **pure**. 

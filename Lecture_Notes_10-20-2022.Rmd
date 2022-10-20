@@ -1,0 +1,330 @@
+---
+title: "Lecture_Notes_10-20-2022"
+author: "Grace Rade"
+date: "2022-10-20"
+output: html_document
+---
+
+## Lec 13
+
+### The Dots!
+
+Basically the dots allow you to passing/forward arguments of functions to other sub-functions nested within it. 
+
+```{r}
+## Example
+
+#x <- function(x, y, ...) {
+#  ---
+#     function2()  what is in the dots, can be used in function2()
+# }
+```
+
+You can capture the dots, aka extract what those inputs are
+
+```{r}
+## Example
+
+y <- function(...){
+  list(...)
+}
+```
+
+You can use arguments that a generic function doesn't except! Generic function `plot()` does not an a main = argument
+  - `plot()` specific scatterplots allows for main = "title" argument
+  
+```{r}
+args(plot) ## no main = argument
+
+plot(rnorm(20), rnorm(20), main = "Sweet Plot")
+
+## Check arguments
+body(plot)
+
+args(plot.default) ## shows all the arguments you could put in the does
+```
+  
+### Return Values
+
+A common issue in Project Phase I. Be mindful of class/type of the object your functions return. 
+
+Ex. returning integer 1 is not the same as returning character 1
+
+### Type problems
+
+Depending on argument value, function returns different type. 
+
+```{r}
+what_do_i_return <- function(x) {
+  if (x %% 10 == 0) { ## if the argument is a multiple of 10, returns a character
+    return(as.character(x))
+  } else {
+    return(x) ## if not, return the number
+  }
+  message("This will never get run") ##this line will never execute, return() exits the function
+}
+what_do_i_return(100)
+
+what_do_i_return(53)
+```
+
+Note: once a sequence in a function encounters return(), the function stops completely. 
+
+The function expects a single number as input, it errors when encountering a vector of two numericals. I.e. the input type does not match
+
+```{r}
+what_do_i_return(c(100, 53)) ##this is vectorized, but incorrectly
+
+## c() combines elements, not makes it a character vector
+```
+
+This is where you use the `map()` function. It will apply it once for every element of the vector, and return a list. 
+
+```{r}
+library(purrr)
+map(c(100, 53), what_do_i_return) ## map() allows you to vectorize function what_do_i_return() 
+```
+
+The steps of `map()`: 
+
+  1. Apply function to 100
+  2. Apply function to 53
+  3. Return in a list (not a vector)
+  
+`map()` is the de facto for loop. It does the same thing without a for loop, faster than a for loop. 
+
+For loops are slow in R (just R). `map()` can be used to get a for loop job done faster for large datasets or when the loop is going to be run many many times.
+
+You also have different types of map. 
+
+```{r}
+map(c(100, 53), what_do_i_return)  ## regular old map()
+
+map_int(c(100, 53), what_do_i_return)  ## map_int() will attempt to return an atomic vector of integers, which clashes with the else statement in what_do_i_return() that returns a character
+
+map_chr(c(100, 53), what_do_i_return) ## returns an object, rather than a vector of integers
+```
+
+### Invisibility
+
+Force visibility with ()
+
+```{r}
+cant_see_me <- function(x) {
+  invisible(x)
+}
+cant_see_me("now")
+
+y <- cant_see_me("later")
+y
+```
+
+
+## Lab 09
+
+```{r}
+library(tidyverse)
+```
+
+The dots (`...`) are a way of collecting an arbitrary set of arguments to a function. There are two main purposes as to why you might want to have the dots as an arguments to your function.
+
+First, note that you can convert the dots into a named list within your function using the `list()` function.
+
+```{r}
+catch_the_dots <- function(...) {
+  list(...)
+}
+
+catch_the_dots(whatever = "hi")  ## the argument can be whatever you want it to be, returns list("hi")
+```
+
+You might want to pass the dots to another function from within your function. This is typically useful when you want to leverage the functionality of an existing function, without having to specify all of its arguments. For example, suppose we want to add themeing to a ggplot. One way to do that would be to extend the scale_color_manual() function and hard-code the official Smith colors.
+
+```{r}
+args(ggplot2::scale_color_manual)  ## first, check the arguments of scale_color_manual()
+
+body(ggplot2::scale_color_manual)  ## scale_color_manual() passes the dots to manual_scale()
+
+body(ggplot2:::manual_scale)  ## manual_scale() then passes the dots to discrete_scale(),
+
+body(ggplot2::discrete_scale)  ## discrete_scale() actually does the work
+```
+
+According to the Smith College Visual Identity program, the official Smith colors are: #002855, #F2A900.
+
+Thus, we can create a scale_color_smith() function that leverages scale_color_manual() by hard-coding the official Smith color values. But in order to get this to work, we have to pass the dots so that scale_color_manual() can do all the work that it normally does! Otherwise, we would have to copy the source of scale_color_manual() – but that would be inefficient and brittle.
+
+```{r}
+scale_color_smith <- function(...) {
+  ggplot2::scale_color_manual(
+    ..., 
+    values = c("#002855", "#F2A900")
+  )
+}
+```
+
+We can then use our custom function. Note that since it only has two colors, it won’t work if it is mapped to a categorical variable with more than two levels.
+
+```{r}
+ggplot(
+  filter(starwars, species %in% c("Human", "Droid")), 
+  aes(x = height, y = mass, color = species)) + 
+  geom_point() + 
+  scale_color_smith()
+```
+
+```{r}
+## Write the corresponding function scale_fill_smith() and test it.
+scale_fill_smith <- function(...){
+ ggplot2::scale_fill_manual(
+   ..., 
+   values = c("#002855", "#F2A900")
+ ) 
+}
+
+ggplot(
+  filter(starwars, species %in% c("Human", "Droid")), 
+  aes(x = height, fill = species)) + 
+  geom_bar(position = "dodge") + 
+  scale_fill_smith()
+```
+
+
+```{r}
+## (Challenge) Write a scale_y_continuous_smith() function that produces a gradient scale from Smith blue to Smith gold.
+
+args(scale_y_continuous)
+
+body(scale_y_continuous)
+
+body(continuous_scale)
+
+scale_y_continuous_smith <- function(...) {
+  ggplot2::scale_color_gradient(
+    aes(y = ...), 
+    low = "#002855", 
+    high = "#F2A900")
+  }
+
+ggplot(filter(starwars, species %in% c("Human", "Droid")), 
+  aes(x = gender, y = height, color = species)) + 
+  geom_point() + 
+  scale_y_continuous_smith()
+```
+
+The other main purpose of the dots is to avoid having to specify (or even know) all the arguments that S3 methods take. For example, the `print()` function takes only the argument x (the thing to be printed) and the dots ... .
+
+```{r}
+args(print)
+```
+
+However, different `print()` methods take different arguments.
+
+```{r}
+args(print.data.frame)
+
+args(print.factor)
+```
+
+Note that the `factor` method passes the dots to `print()` itself. In this case, what is being run is `print.default()`, which passes them to an internal function.
+
+```{r}
+body(print.factor)
+
+args(print.default)
+
+body(print.default)
+```
+
+We will define our own print() method, and then run it on a factor. First, let’s make a factor.
+
+```{r}
+x <- factor(starwars$name)
+x
+```
+
+Note that `max.levels` is one of the arguments to `print.factor()`, and so we can use that option.
+
+```{r}
+args(print.factor)
+```
+
+```{r}
+print(x, max.levels = 3)
+```
+
+However, since `print.factor()` eventually passes the dots to `print.default(`), and `print.default()` accepts right as one of its arguments, we can use the right argument with the `print()` generic!
+
+```{r}
+print(x, right = TRUE)
+```
+
+```{r}
+## Experiment by passing some other arguments accepted by print.default() through the dots. Do they work?
+
+args(print.default)
+
+print(x, quote = FALSE)  ## does work?
+
+print(x, useSource = FALSE)  ## prints something
+
+print(x, color = "red") ## does not work
+```
+
+Next, we will define a new `print()` method for objects of class my_factor. This method displays the names of the dots, gives an affirmation of your programming, and then calls and returns `print.factor()`. Thus, the behavior is the same as `print.factor()`, but with a little extra information.
+
+```{r}
+print.my_factor <- function(x, ...) {
+  dots <- list(...)
+  
+  if (length(dots) > 0) {
+    message(paste("\nThe dots are:", names(dots)))
+  }
+  
+  affirmations <- c(
+    "You are a really great programmer!",
+    "You are so good at this!",
+    "You're learning so much!",
+    "Keep trying and you will get there!"
+  )
+  
+  if ("affirmation" %in% names(dots)) {
+    message(sample(affirmations, 1))
+  }
+  
+  print.factor(x, ...)
+}
+
+class(x) <- "my_factor"
+print(x, max.levels = 3, right = TRUE, affirmation = TRUE)
+
+```
+
+```{r}
+##Write your own method for print() that works on data.frames.
+args(print.data.frame)
+body(print.data.frame)
+
+print.my_data_frame <- function(x, ...){
+  dots <- x
+  if (length(dots) > 0) {
+    message(paste("\nThe dots are:", names(dots)))
+  }
+  
+  book_rec <- c("Lady Audley's Secret", 
+                "Percy Jackson series",
+                "Anne of the Island", 
+                "The Martain")
+  
+  if ("book_rec" %in% names(dots)) {
+    message(sample(book_rec, 1))
+  }
+  
+  print.data.frame(x, ...)
+  }
+
+print.my_data_frame(starwars, quote = TRUE, book_rec = TRUE)  
+
+### I'm confused
+```
+

@@ -1,0 +1,195 @@
+---
+title: "Lecture_Notes_10-25-2022"
+author: "Grace Rade"
+date: "2022-10-25"
+output: html_document
+---
+## Lec 14
+
+### Functions recap
+
+53 $\ne$ 53.0 (int vs. double). 
+
+Make sure the object that you're returning is the correct class. Check with `class()`. 
+
+### purrr::map()
+
+**Why are we learning this?**
+
+  1. We want to avoid, if possible, for loops in R because they are *slow*. This can be an issue for large data and/or many uses of the for loop. 
+  
+  2. It fits into a pipe-sequence (can use %>%), for loops do not.
+  
+**You need to know**:  `map()`, `map2()`, `pmap()`
+
+`map()` is just like `lapply()`. It applies a function to each element of the input. The input is an object with x elements of the same type,` map()` applies the function `f()` x-times. `lapply()` is the base R equivalent of `map()`.
+
+If `f()` requires a second input (aka `f(x, y)`), `map()` can be used just the same. x is an object of 4 of the same type, y is a scalar value. 
+
+(Slide 6 tbd on `map()` with a second vector argument)
+
+**Examples**
+
+```{r}
+library(tidyverse)
+map_int(starwars$films, length) ##find the length of each row (each row is a list of films for each character), a count for each element of the list-column
+```
+
+```{r}
+map_chr(mpg, typeof) ##check the type of each column
+```
+
+```{r}
+map(1:3, `^`, 2) ## square each number in (1, 2, 3)
+
+map(1:3, `+`, 2)  ## add 2 to each number in (1, 2, 3)
+```
+
+**Splitting a data.frame into groups**
+
+Return 2x `lm()` regressions results for mpg by year.
+
+Option 1: use `group_split()` and `map().group_split()` returns a list of tibbles
+
+```{r}
+mods_split <- mpg %>%
+  group_split(year) %>%
+  map(~lm(hwy ~ displ + trans, data = .x))
+mods_split
+```
+
+Option 2: use `group_by()` and `group_map()`. `group_map()` is like `map()` but on a **grouped tibble**
+
+```{r}
+mods_by <- mpg %>%
+  group_by(year) %>%
+  group_map(~lm(hwy ~ displ + trans, data = .x))
+
+mods_by
+```
+
+**map2() with a scalar *third* argument**
+
+Two vectors, a function, and a scalar. (get back to this later)
+
+Like `map()` but for a two-argument case. 
+
+```{r}
+map2_lgl(
+  mods_split, mods_by, 
+  ~identical(coef(.x), coef(.y))
+)
+
+map2_dbl(1:3, 0:2, `^`)
+```
+
+
+`pmap()` **also exists**
+
+```{r}
+params <- tibble(
+  mean = -1:1,
+  sd = c(0.5, 1, 2)
+)
+args(rnorm)
+
+pmap(params, rnorm, n = 1000) %>%
+  map_dbl(mean)
+```
+
+.x redirects data to go into the correct argument.
+
+## Lab 10 
+
+```{r}
+random_dist <- tibble(
+  n = 1:20 * 100)  ## create a vector n, which represents how much random data we are going to generate in each simulation, store this as a tibble with one column (for now).
+```
+
+```{r}
+random_data <- map(random_dist$n, rnorm)
+str(random_data) ## generate a list of random vectors, each drawn from a normal distribution with a different number of samples drawn in each case.
+
+random_dist$data <- random_data ## save the list as a column in our tibble (list-column)
+random_dist 
+
+random_dist %>%
+  unnest(cols = data) %>%
+  nrow()  ## see the long version with unnest()
+```
+
+```{r}
+random_dist <- random_dist %>%
+  mutate(means = map_dbl(data, mean), sds = map_dbl(data, sd)) ##lets perform some analysis  on our randomly generate datasets
+```
+
+
+**Exercise 1: Use the median() function to compute the median of each data set. Add them to the random_dist data frame.**
+
+```{r}
+random_dist <- random_dist %>% 
+  mutate(median = map_dbl(data, median))
+```
+
+**Exercise 2: Make a scatterplot of the standard deviations as a function of the size of the simulation. Do you notice a pattern?**
+
+```{r}
+ggplot(random_dist, aes(x = n, y = sds)) +
+  geom_point()
+
+## I notice a vauge negative trend, but not particularly strong
+```
+
+In the previous examples, the vector that we were iterating over was the first argument to the function that we wanted to apply. This is typical, but not the only situation we may find ourselves in.
+
+Here, we want to experiment with different trimmed means. That is, we want to compute the mean of **a single** simulated data set after throwing away either 10% or 25% of the data.
+
+In this case, we want to iterate over the `trim` argument to `mean()` instead of the `x` argument. To do this, we make use of the `.x` syntax made possible by the `~`.
+
+```{r}
+map_dbl(
+  c(0.1, 0.25), 
+  ~mean(x = random_dist$data[[1]], trim = .x)
+)
+```
+
+
+**Exercise 3: Suppose we wanted to apply both values for the trimmed mean to all of the data sets. Why is map_dbl() insufficient for this task? What kind of function would we need?**
+
+We have two different vectors of two different lengths, we need to use a different `map()` variation instead. 
+
+Now we’re going to write each one of our data sets to a separate CSV file. We’ll name each file using the sample size, so that we can tell them apart later. The `path()` function from the fs package will specify the full path. The `tempdir()` function returns the path to the temp directory on your computer.
+
+```{r}
+random_dist <- random_dist %>%
+  mutate(
+    filename = paste0("random_data_", n, ".csv"),
+    file = fs::path(tempdir(), filename)
+)
+```
+
+Note that each entry in the data list-column is a double vector. In order to write a CSV, we need this to be a data.frame. The `enframe()` function converts a vector into a tibble. We can use `map()` to do this to each data set.
+
+```{r}
+random_dist <- random_dist %>%
+  mutate(data_frame = map(data, enframe))
+```
+
+Finally, we’re ready to write the files. Note that we need to know both the path to the CSV file that we want to create, and the data set itself. The `pwalk()` function will step through our data frame row-by-row. To make things easier, we’ll rename the `data` column `x`, so it matches the argument name `write_csv()` is expecting.
+
+```{r}
+args(write_csv)  ##check the arguments first
+
+random_dist %>%
+  select(x = data_frame, file) %>%
+  pwalk(write_csv)
+```
+
+**Exercise 4: Rewrite the previous pwalk() statement without the renaming (i.e., select()) step. To do this you will need to use the ~ formulation.**
+
+```{r}
+random_dist %>% 
+  select(x = data_frame, file) %>%
+  pwalk(~write_csv(x = .x))
+```
+

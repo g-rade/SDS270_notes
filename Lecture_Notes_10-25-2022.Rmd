@@ -190,6 +190,6 @@ random_dist %>%
 ```{r}
 random_dist %>% 
   select(x = data_frame, file) %>%
-  pwalk(~write_csv(x = .x))
+  pwalk(~write_csv(x = .x, file = .y))
 ```
 

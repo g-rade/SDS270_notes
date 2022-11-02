@@ -1,0 +1,156 @@
+---
+title: "Lecture_Notes_11-1-2022"
+author: "Grace Rade"
+date: "2022-11-01"
+output: html_document
+---
+## Lec 16
+
+### Conditions
+
+Three types of ways to interact with/communicate feedback to code to the user: errors, warnings, and messages
+
+  + catch errors with `tryCatch()`
+  
+    - allows you to intercept errors that you can anticipate in advance (not for unexpected errors)
+  
+**Errors**
+
+`stop()` or `rlang::abort()` terminate the execution immediately becuase of error. The code comes to a halt and an error message is thrown (error message optional as a string in `stop()`)
+
+  + the most aggressive
+  
+  + use this if the user is going to do something dangerous
+  
+  + traffic light: red
+  
+**Warnings**
+
+`warning()` or `ralng::warn()` continues the execution but communicates a heads up to the user about potential problem
+
+  + traffic light: yellow
+  
+**Messages**
+`message()` (don't use `print()` or `cat()`), proceeds as normal and communicates something for the user that they should know, but is not going to be an issue with the execution of the code
+
+  + traffic light: green
+  
+  + don't use `print()` or `cat()` because they only output to console/screen, but `message()`, `warning()`, and `error()` output to the `stderr` environment where you can then use debugging tools
+ 
+ 
+**Catching Errors**
+
+```{r}
+add_safe <- function(x, y) {
+  out <- tryCatch(
+    ## named function!
+    error = function(cnd) {
+      ## stuff to do when error occurs, try to guess and intercept potential errors
+      ## can use an if-else statement to try and catch many types of errors
+      0
+    },
+    ## what you are actually trying to do
+    x + y
+  )
+  return(out)
+}
+add_safe(3, 5)
+
+add_safe(4, a)
+```
+
+
+## Lab 12 
+
+**Examine the code for unique_values() carefully. Do you understand how it works?**
+
+```{r}
+library(tidyverse)
+
+unique_values <- function(.data, ...) {
+  x <- .data %>% ## takes a data frame and selects some columns
+    select(...)
+  
+  if (ncol(x) == ncol(.data)) {
+    warning("All columns selected!") ## warns the user if they select all the columns
+  }
+  
+  if (ncol(x) < 1) {
+    stop("No columns selected.") ## error message if no columns are selected
+  }
+
+  message(paste("Computing on", ncol(x), "columns..."))  ## tells the user that the function is working on x number of columns
+  map_int(x, n_distinct) ## finds the number of distinct rows in x
+}
+```
+```{r}
+unique_values(starwars)
+```
+
+**Was the error in the previous example thrown by unique_values() or by select()? How do you know?**
+
+The error was thrown by by `unique_values()` because the `select()` still works with no input. And we made the error message a condition within the function. 
+
+```{r}
+unique_values(starwars, everything()) ## select all columns, still works but we get an error
+```
+
+**Why does the warning message show up after the results? Why does the warning message show up after the message, when the line of code with message() came after the call to warning() in the function?**
+
+Warning messages always come at the end of a code output. The number of columns is evaluated only when running the `map_int()` line in the function, which comes after the message statement. 
+
+
+Since `unique_values()` passes the dots to `select()`, we can leverage all of the functionality of the select helpers!
+
+```{r}
+unique_values(starwars, contains("n"))
+```
+
+However, if we pass garbage to select(), then of course select() will still throw an error.
+
+```{r}
+unique_values(starwars, i_love_r)
+```
+
+**Consider the difference in the output between the previous example and unique_values(starwars). What is different?**
+
+`select()` will only work on columns present in the dataset, so throwing gabrage will stop the function at the `select()` step. However, `select()` still works when you select nothing, so then the error is caught by `unique_values()` instead. 
+
+Instead of just failing whenever the user passes bad arguments to `select()`, we might want to catch those errors and do something with them. Here, we use a t`ryCatch()` statement to provide some additional information about what went wrong, and to continue with the original data frame if the `select()` statement failed.
+
+```{r}
+unique_values_safe <- function(.data, ...) {
+  x <- tryCatch(
+    error = function(cnd) {
+      warning("Attempt to select column has failed")
+      message("Here is what we know about the error")
+      str(cnd)
+      .data
+    },
+    .data %>%
+      select(...)
+  )
+  
+  if (ncol(x) == ncol(.data)) {
+    warning("All columns selected!")
+  }
+  
+  if (ncol(x) < 1) {
+    stop("No columns selected.")
+  }
+
+  message(paste("Computing on", ncol(x), "columns..."))  
+  map_int(x, n_distinct)
+}
+```
+
+Now, even when it throws errors, we still get output. 
+
+```{r}
+unique_values_safe(starwars, i_love_r)
+```
+
+
+**Why might it be a better idea to fail with an error in the previous example instead of continuing with the full data frame?**
+
+Teach the user not to put garbage parameters into the function. Also, if the output is being used in other finctions, the error may carry over and the user will get incorrect results. 

@@ -1,0 +1,161 @@
+---
+title: "Lecture_Notes_10-27-2022"
+author: "Grace Rade"
+date: "2022-10-27"
+output: html_document
+---
+## Lec 15
+
+### Environments
+
+Environments: *where* are your functions and objects and *how* can I use/access them? 
+
+Important environments for us to focus on: **namespace environment**, **package environment**. 
+
+  + Less important: super assignment, recursing over environments, call stacks, environments as data structures
+
+**Four Types of Environments in R**
+
+  1. package environments: objects provided by the package (important)
+  
+    + aka the search path
+    
+    + control what is available to *users*
+  
+```{r}
+library(tidyverse)
+library(rlang)
+pkg_env("stats") %>%
+  env_names()  ## functions and objects that you can use in stats package
+
+sd  ## write function name w/o parenthesis to see what the function environment is
+
+find("sqrt") ## tells us what package it's in
+```
+  
+  2. execution environments: where the function is executed
+  
+  3. namespace environments: what is available to the function (important)
+  
+    + control what is available to *developers*
+  
+```{r}
+ns_env("stats") %>% env_parents() ## literal contents of a namesoace
+```
+  
+  
+  4. function environment: where the function is defined
+  
+```{r}
+library(macleish)
+
+macleish_created <- ns_env("macleish") %>% 
+  env_names()
+macleish_created  ## functions that the macleish developers created, may or may not be exported
+
+macleish_imports <- ns_env("macleish") %>% 
+  env_parent() %>%
+  env_names()
+length(macleish_imports)
+
+macleish_imports  ## objects from other packages that macleish developers use
+
+macleish_exports <- pkg_env("macleish") %>%
+  env_names()
+macleish_exports  ## objects that the macleish users can see
+```
+
+
+## Lab 11
+
+```{r}
+search()  ## see the search path
+
+rlang::search_envs() ## Note that if we use a function from another package using the :: operator, the package is loaded, but it is not added to the search path (i.e., attached)
+```
+
+When you start a new R session, the search path contains only those packages that are loaded by default.
+
+**How can you tell from the previous result that the rlang package is not part of the search path?**
+
+You can tell that `rlang` is not part of the search path because it is not in the results of the `search()` function. 
+
+```{r}
+library(rlang)  ## add rlang to the search path
+
+search() ## rlang is now in the search path
+```
+
+The `tidyverse` is a kind of meta-package that loads several other packages. Note the order in which the new packages are loaded.
+
+```{r}
+library(tidyverse)
+search()
+```
+
+**How many different packages did the tidyverse add to the search path? Why do you think the developers chose the order they did?**
+
+Tidyverse contains 9 packages that are added to the search path. The developers chose this order because certain functions in the packages overwrite functions of the same name in different packages. 
+
+```{r}
+current_env() ## check current environment
+
+env_print() ## see what is in the environment
+```
+
+The current environment is usually the global environment, but that is not always the case. 
+
+```{r}
+global_env() ## make current environment the global environment
+```
+
+Let’s write a function that returns the environment that runs during its execution. Note that this is not the global environment.
+
+```{r}
+func_env <- function() {
+  x <- "what?"
+  current_env()
+}
+
+env_print(func_env())
+```
+
+**What is the parent environment of the execution environment shown above?**
+
+The parent environment is the global environment. 
+
+
+Let’s now change the global environment by writing a function called `filter()`. This function will just pass its argument to `dplyr::filter()` after printing a message to the screen.
+
+```{r}
+filter <- function(.data, ...) {
+  message(paste("Filtering a", first(class(.data)), "object with", nrow(.data), "rows..."))
+  dplyr::filter(.data, ...)
+}
+```
+
+**Use the new filter() function to find all the human characters in starwars. Does it work? Why or why not?**
+
+```{r}
+starwars %>% 
+  filter(species == "Human")
+```
+
+This does work because the `dplyr::filter` works. 
+
+```{r}
+env_has(global_env(), "filter") ## check if filter() is in the search path
+search()
+
+search_envs() %>%
+  map_lgl(env_has, "filter")  ## check for all elements of the search path that have a filter function
+
+```
+
+
+```{r}
+##How can we use the filter() function from the stats package?
+
+##stats::filter()
+```
+

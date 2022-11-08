@@ -1,0 +1,32 @@
+---
+title: "Lecture_Notes_11-3-2022"
+author: "Grace Rade"
+date: "2022-11-03"
+output: html_document
+---
+## Lec 17
+
+**Initializing local and remote repos**
+
+  + Remote repo -> local directory (done previously via cloning)
+  
+  + Local directory -> remote (push to github to make a remote repo)
+  
+    - ex. R package skeleton you created via `usethis::create_tidy_package()`
+    
+      - enable git in directory in the command line using `git init` (meh) or `usethis::use_git()` in the console
+      
+      - enable git in directory using `usethis::use_github()` in the R console, this function just calls `git init`
+      
+        -  create new GitHub repo -> initiate this repo (skip this part in the settings)
+      
+        - push existing repo from command line (when you set this up on GitHub they have the code for you to copy paste into the terminal), code will link local to remote by setting remote origin to repo URL
+      
+      
+**Two ways to install someone else’s GitHub R package locally**
+
+  + Clone the repo locally into RStudio and build from RStudio (Lec 10)
+  
+  + or run `devtools::install_github("username/pkg_name")` or `remotes::install_github()`
+  
+  

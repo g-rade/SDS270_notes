@@ -1,0 +1,44 @@
+---
+title: "Lecture_Notes_11-8-2022"
+author: "Grace Rade"
+date: "2022-11-08"
+output: html_document
+---
+
+## Lec 18
+
+```{r}
+library(tidyverse)
+library(moderndive)
+library(scales)
+library(janitor)
+```
+
+### Adding a Dataset to an R Package
+
+**Steps**
+
+  1. Go to the GitHub Repo, in `moderndive` repo `data-raw/DD_vs_SB.csv`
+  
+    + `data+raw/` is a directory, `DD_vs_SB.csv` is the raw data from the web that we put in that directory
+    
+    + i.e. in spirit of transparency and reproducibility, share raw-ist form of data
+    
+  2. In repo, `data-raw/process_data_sets.R` (Line 99) is a reprex (reproducible example) to clean/wrangle data (Line 101-118) and add data to package via `usethis::use_data()` (Line 119)
+  
+    + use `overwrite = TRUE` generally to make sure people only access the most updated dataset, when putting it in the first time, `overwrite = TRUE` will just create it
+    
+    + `usethis::use_data()` created `data/DD_vs_SB.rda` file (compressed R data file), which is what gets distributed 
+      
+      - you never interact with this file, it's only used internally in R
+  
+  3. In repo `R/datasets.R` for documenting data set using `roxygen2` code.
+  
+    + `R/` contains all functions and roxygen documentation code
+    
+    + Line 244 - 258 is the code for the help file, `@format` you give each variable context
+    
+    + This creates the output `man/DD_vs_SB.Rd` which is a R help file that you shouldn’t directly modify. Leave it alone. To make changes, change the `roxygen` code. 
+    
+      - `man/` is the [instruction] manual directory and `.Rd` is an R documentation file
+    

@@ -1,0 +1,29 @@
+---
+title: "Lecture_Notes_11-10-2022"
+author: "Grace Rade"
+date: "2022-11-10"
+output: html_document
+---
+
+## Lec 19
+
+### R CMD Check
+
+From R Packages book: "R CMD check automatically checks your code for common problems. It’s essential if you’re planning on submitting to CRAN, but it’s useful even if you’re not because it automatically detects many common problems that you’d otherwise discover the hard way."
+
+Think of it as way to check that your package passes CRAN standards. 
+
+**Steps**
+
+  1. Build package (early and often)
+  
+  2. Check button, will tell you what your errors/warnings/notes are
+  
+### Testing
+
+Formal software engineering tests of you functions and data to ensure they are doing what's expected of them. 
+
+**Steps (abbot example)**
+
+  1. run `usethis::use_test("apples")` to create `test/testthat/test-apples.R` 
+  2. in this document you can pre-program tests for your object

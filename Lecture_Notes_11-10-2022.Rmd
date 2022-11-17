@@ -27,3 +27,32 @@ Formal software engineering tests of you functions and data to ensure they are d
 
   1. run `usethis::use_test("apples")` to create `test/testthat/test-apples.R` 
   2. in this document you can pre-program tests for your object
+  
+  
+  
+```{r}
+library(tidyverse)
+library(janitor)
+mortality2 <- read.delim("mortality2016_2 copy.txt") %>%
+  clean_names() %>%
+  rename(age_group = single_year_ages) %>%
+  select(age_group, deaths, population) %>%
+  filter(!is.na(deaths)) %>%
+  mutate(age_group = ifelse(age_group == "", "Not Stated", age_group)) %>%
+  filter(age_group != "Not Stated", deaths != "Not Applicable", population != "Not Applicable")
+
+mortality2$deaths <- as.numeric(mortality2$deaths)
+mortality2$population <- as.numeric(mortality2$population)
+
+mortality2 <- mortality2 %>% 
+  mutate(CondProbDeath = (deaths/(population + 0.5*deaths))) %>% 
+  mutate(CondProbLife = (1 - CondProbDeath)) %>% 
+  mutate(NumToSurvive = if_else(row_number() ==1 , 100000, 100000*lag(cumprod(CondProbLife)))) %>% 
+  mutate(PromToSurvive = NumToSurvive/100000) %>% 
+  mutate(PersonYears = (NumToSurvive + lead(NumToSurvive))/2) %>% 
+  mutate(PersonYears = if_else(is.na(PersonYears), NumToSurvive, PersonYears)) %>% 
+  mutate(TotalYears = if_else(row_number() == 1, sum(PersonYears), sum(PersonYears) - lag(cumsum(PersonYears)))) %>% 
+  mutate(LifeExpectancy = TotalYears/100000)
+
+```
+

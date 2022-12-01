@@ -1,0 +1,35 @@
+---
+title: "Lecture_Notes_11-29-2022"
+author: "Grace Rade"
+date: "2022-11-29"
+output: html_document
+---
+## Lec 23
+
+### Vignettes 
+
+A `README` cover page is a quick start guide to the package, but a vignette is a detailed instructional manual. 
+
+```{r}
+## to access a list of all vignettes available for all packages
+
+vignette()
+
+## to access the specific vignette for ggplot2
+
+vignette("ggplot2-in-packages")
+```
+
+You can only see the vignettes of packages you have installed. 
+
+```{r}
+## get the name of the vignette for IPEDS package
+
+vignette(package = "IPEDS")
+vignete ("IPEDS-vignette")
+
+```
+
+roxygen makes it easy to write vignettes with the `usethis::use_vignette()` wrapper function. But you need to configure your build tools to make sure that you can use roxygen for this. 
+
+Reference: R-pkgs ch. 17

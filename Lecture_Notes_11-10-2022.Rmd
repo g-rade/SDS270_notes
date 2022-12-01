@@ -52,7 +52,17 @@ mortality2 <- mortality2 %>%
   mutate(PersonYears = (NumToSurvive + lead(NumToSurvive))/2) %>% 
   mutate(PersonYears = if_else(is.na(PersonYears), NumToSurvive, PersonYears)) %>% 
   mutate(TotalYears = if_else(row_number() == 1, sum(PersonYears), sum(PersonYears) - lag(cumsum(PersonYears)))) %>% 
-  mutate(LifeExpectancy = TotalYears/100000)
+  mutate(LifeExpectancy = TotalYears/NumToSurvive)
 
+```
+
+```{r}
+library(lifetables)
+mortality2 %>% 
+  as_tibble() %>% 
+  lifetable(age_groups, population, deaths)
+
+library(reprex)
+reprex()
 ```
 

@@ -1,0 +1,17 @@
+---
+title: "Lecture_Notes_12-6-2022"
+author: "Grace Rade"
+date: "2022-12-06"
+output: html_document
+---
+
+## Lec 24
+
+### GitHub Actions, Continuous Integration
+
+Continuous integration is a software engineering tool for automating routine tasks. Outsource these tasks to the machines. 
+
+GitHub Actions is GitHub's implementation of CI. In our case, we'll automate package checking with every pushed commit. But you can do lots of stuff with GitHub Actions. 
+
+`usethis::use_github_actions()` to add the automatic check to your repository. 
+`usethis::use_github_actions_badge()` to add the CMD check to your README. 
